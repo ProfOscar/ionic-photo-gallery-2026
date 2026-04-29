@@ -25,7 +25,7 @@ export class PhotoService {
     // Memorizziamo la foto scattata 
     // (unshift è come push, ma aggiunge il nuovo elemento all'inizio dell'array)
     this.photos.unshift(savedImageFile);
-    
+
     //console.log(this.photos);
 
     Preferences.set({
@@ -61,6 +61,24 @@ export class PhotoService {
       };
       reader.readAsDataURL(blob);
     });
+  }
+
+  public async loadSaved() {
+    // Retrieve cached photo array data
+    const { value: photoList } = await Preferences.get({ key: this.PHOTO_STORAGE });
+    this.photos = (photoList ? JSON.parse(photoList) : []) as UserPhoto[];
+
+    // CHANGE: Display the photo by reading into base64 format
+    for (let photo of this.photos) {
+      // Read each saved photo's data from the Filesystem
+      const readFile = await Filesystem.readFile({
+        path: photo.filepath,
+        directory: Directory.Data,
+      });
+
+      // Web platform only: Load the photo as base64 data
+      photo.webviewPath = `data:image/jpeg;base64,${readFile.data}`;
+    }
   }
 }
 
