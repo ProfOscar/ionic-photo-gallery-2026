@@ -2,12 +2,16 @@ import { Injectable } from '@angular/core';
 
 import { Camera, CameraDirection } from '@capacitor/camera';
 import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Preferences } from '@capacitor/preferences';
 
 @Injectable({
   providedIn: 'root',
 })
 export class PhotoService {
   public photos: UserPhoto[] = [];
+
+  // Chiave per reperire la collezione di foto in localstorage
+  private PHOTO_STORAGE: string = 'photos';
 
   public async addNewToGallery() {
     // Scattiamo una foto
@@ -16,16 +20,18 @@ export class PhotoService {
       quality: 100
     })
 
+    const savedImageFile = await this.savePicture(capturedPhoto.webPath!);
+
     // Memorizziamo la foto scattata 
     // (unshift è come push, ma aggiunge il nuovo elemento all'inizio dell'array)
-    this.photos.unshift({
-      filepath: "",
-      webviewPath: capturedPhoto.webPath
-    })
-
+    this.photos.unshift(savedImageFile);
+    
     //console.log(this.photos);
 
-    const savedImageFile = await this.savePicture(capturedPhoto.webPath!);
+    Preferences.set({
+      key: this.PHOTO_STORAGE,
+      value: JSON.stringify(this.photos),
+    });
   }
 
   private async savePicture(webPath: string) {
