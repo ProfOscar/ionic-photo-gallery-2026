@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 
-import { Camera, CameraDirection } from '@capacitor/camera';
+import { Camera, CameraDirection, MediaResult } from '@capacitor/camera';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Preferences } from '@capacitor/preferences';
 import { Platform } from '@ionic/angular';
@@ -24,7 +24,7 @@ export class PhotoService {
       quality: 100
     })
 
-    const savedImageFile = await this.savePicture(capturedPhoto.webPath!);
+    const savedImageFile = await this.savePicture(capturedPhoto);
 
     // Memorizziamo la foto scattata 
     // (unshift è come push, ma aggiunge il nuovo elemento all'inizio dell'array)
@@ -38,18 +38,18 @@ export class PhotoService {
     });
   }
 
-  private async savePicture(webPath: string) {
+  private async savePicture(capturedPhoto: MediaResult) {
     let base64Data: string | Blob;
 
     if (this.platform.is('hybrid')) {
       // sono su dispositivo fisico
       const file = await Filesystem.readFile({
-        path: webPath
+        path: capturedPhoto.uri!
       });
       base64Data = file.data;
     } else {
       // sono su web browser
-      const response = await fetch(webPath!);
+      const response = await fetch(capturedPhoto.webPath!);
       const blob = await response.blob();
       base64Data = (await this.convertBlobToBase64(blob)) as string;
     }
@@ -74,7 +74,7 @@ export class PhotoService {
       // already loaded into memory
       return {
         filepath: fileName,
-        webviewPath: webPath,
+        webviewPath: capturedPhoto.webPath,
       };
     }
   }
